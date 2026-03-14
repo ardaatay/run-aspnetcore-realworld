@@ -1,42 +1,37 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using AspnetRun.Application.Interfaces;
-using AspnetRun.Application.Mapper;
+﻿using AspnetRun.Application.Interfaces;
 using AspnetRun.Application.Models;
 using AspnetRun.Core.Entities;
-using AspnetRun.Core.Interfaces;
 using AspnetRun.Core.Repositories;
 using AspnetRun.Core.Specifications;
+using AutoMapper;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace AspnetRun.Application.Services
 {
-    public class CartService : ICartService
+    public class CartService(
+        ICartRepository cartRepository,
+        IProductRepository productRepository,
+        IMapper mapper)
+        : ICartService
     {
-        private readonly ICartRepository _cartRepository;
-        private readonly IProductRepository _productRepository;
-        private readonly IAppLogger<CartService> _logger;
-
-        public CartService(ICartRepository cartRepository, IProductRepository productRepository, IAppLogger<CartService> logger)
-        {
-            _cartRepository = cartRepository ?? throw new ArgumentNullException(nameof(cartRepository));
-            _productRepository = productRepository ?? throw new ArgumentNullException(nameof(productRepository));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
+        private readonly ICartRepository _cartRepository = cartRepository ?? throw new ArgumentNullException(nameof(cartRepository));
+        private readonly IProductRepository _productRepository = productRepository ?? throw new ArgumentNullException(nameof(productRepository));
 
         public async Task<CartModel> GetCartByUserName(string userName)
         {
             var cart = await GetExistingOrCreateNewCart(userName);
-            var cartModel = ObjectMapper.Mapper.Map<CartModel>(cart);
+            var cartModel = mapper.Map<CartModel>(cart);
 
             if (cart.Items.Any(c => c.Product == null)) // If product can not loaded from razor page, we apply manuel mapping.
             {
                 cartModel.Items.Clear();
                 foreach (var item in cart.Items)
                 {
-                    var cartItemModel = ObjectMapper.Mapper.Map<CartItemModel>(item);
+                    var cartItemModel = mapper.Map<CartItemModel>(item);
                     var product = await _productRepository.GetProductByIdWithCategoryAsync(item.ProductId);
-                    var productModel = ObjectMapper.Mapper.Map<ProductModel>(product);
+                    var productModel = mapper.Map<ProductModel>(product);
                     cartItemModel.Product = productModel;
                     cartModel.Items.Add(cartItemModel);
                 }
@@ -50,7 +45,7 @@ namespace AspnetRun.Application.Services
             var cart = await GetExistingOrCreateNewCart(userName);
 
             var product = await _productRepository.GetByIdAsync(productId);
-            cart.AddItem(productId, unitPrice:product.UnitPrice);
+            cart.AddItem(productId, unitPrice: product.UnitPrice);
             await _cartRepository.UpdateAsync(cart);
         }
 
@@ -58,7 +53,7 @@ namespace AspnetRun.Application.Services
         {
             var spec = new CartWithItemsSpecification(cartId);
             var cart = (await _cartRepository.GetAsync(spec)).FirstOrDefault();
-            cart.RemoveItem(cartItemId);
+            cart?.RemoveItem(cartItemId);
             await _cartRepository.UpdateAsync(cart);
         }
 

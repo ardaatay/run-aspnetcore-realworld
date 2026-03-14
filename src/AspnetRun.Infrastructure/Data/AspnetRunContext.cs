@@ -63,8 +63,12 @@ namespace AspnetRun.Infrastructure.Data
         private static void SetTableNamesAsSingle(ModelBuilder builder)
         {
             // Use the entity name instead of the Context.DbSet<T> name
+            // Skip Identity types as they manage their own table configuration
             foreach (var entityType in builder.Model.GetEntityTypes())
             {
+                if (entityType.ClrType.Namespace?.StartsWith("Microsoft.AspNetCore.Identity") == true)
+                    continue;
+
                 builder.Entity(entityType.ClrType).ToTable(entityType.ClrType.Name);
             }
         }

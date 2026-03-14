@@ -8,16 +8,10 @@ using System.Threading.Tasks;
 
 namespace AspnetRun.Web.Services
 {
-    public class IndexPageService : IIndexPageService
+    public class IndexPageService(IProductService productAppService, IMapper mapper) : IIndexPageService
     {
-        private readonly IProductService _productAppService;
-        private readonly IMapper _mapper;
-
-        public IndexPageService(IProductService productAppService, IMapper mapper)
-        {
-            _productAppService = productAppService ?? throw new ArgumentNullException(nameof(productAppService));
-            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
-        }
+        private readonly IProductService _productAppService = productAppService ?? throw new ArgumentNullException(nameof(productAppService));
+        private readonly IMapper _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
 
         public async Task<IEnumerable<ProductViewModel>> GetProducts()
         {

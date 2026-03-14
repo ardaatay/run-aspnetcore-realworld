@@ -10,12 +10,8 @@ using System.Threading.Tasks;
 
 namespace AspnetRun.Infrastructure.Repository
 {
-    public class ProductRepository : Repository<Product>, IProductRepository
+    public class ProductRepository(AspnetRunContext dbContext) : Repository<Product>(dbContext), IProductRepository
     {
-        public ProductRepository(AspnetRunContext dbContext) : base(dbContext)
-        {
-        }
-
         public async Task<IEnumerable<Product>> GetProductListAsync()
         {
             var spec = new ProductWithCategorySpecification();
@@ -53,7 +49,7 @@ namespace AspnetRun.Infrastructure.Repository
 
         public async Task<IEnumerable<Product>> GetProductByCategoryAsync(int categoryId)
         {
-            return await _dbContext.Products
+            return await DbContext.Products
                 .Where(x => x.CategoryId==categoryId)
                 .ToListAsync();
         }
